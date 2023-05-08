@@ -61,6 +61,9 @@ std::streamsize CurlStreambuff::xsgetn(char *s, std::streamsize n)
     s += to_copy;
     m_pos += to_copy;
     remaining -= to_copy;
+    m_total_bytes_used += to_copy;
+
+    std::cout << "DEBUG: CurlStream: Received " << m_total_bytes_received << " bytes, Used " << m_total_bytes_used << "bytes." << std::endl;
   }
   return n - remaining;
 }
@@ -93,9 +96,8 @@ int CurlStreambuff::writer_callback(char *data, size_t size, size_t count, void*
   if(bytes == 0) {
     return 0;
   }
-  self->m_total_bytes += bytes;
+  self->m_total_bytes_received += bytes;
   memcpy(&self->m_buffer[0], data, bytes);
-  std::cout << "DEBUG: CurlStream: Received " << self->m_total_bytes << " total bytes from server." << std::endl;
   self->m_size = bytes;
   self->m_pos = 0;
   return bytes;
