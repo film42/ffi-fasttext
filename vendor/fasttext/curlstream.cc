@@ -37,7 +37,7 @@ CurlStreambuff::~CurlStreambuff()
 {
   if (m_multi_handle && m_http_handle) {
     curl_multi_remove_handle(m_multi_handle, m_http_handle);
-  } 
+  }
   if (m_http_handle) {
     curl_easy_cleanup(m_http_handle);
   }
@@ -59,7 +59,7 @@ std::streamsize CurlStreambuff::xsgetn(char *s, std::streamsize n)
     memcpy(s, &m_buffer[m_pos], to_copy);
     s += to_copy;
     m_pos += to_copy;
-    remaining -= to_copy;    
+    remaining -= to_copy;
   }
   return n - remaining;
 }
@@ -88,10 +88,13 @@ int CurlStreambuff::writer_callback(char *data, size_t size, size_t count, void*
 {
   auto self = static_cast<CurlStreambuff*>(ptr);
   auto bytes = size * count;
-  if(bytes > sizeof(m_buffer) || bytes == 0) {
+  assert(bytes <= sizeof(m_buffer));
+  if(bytes == 0) {
     return 0;
   }
+  self->m_total_bytes += bytes;
   memcpy(&self->m_buffer[0], data, bytes);
+  std::cout << "DEBUG: CurlStream: Received " << self->m_total_bytes << " total bytes from server." << std::endl;
   self->m_size = bytes;
   self->m_pos = 0;
   return bytes;
@@ -110,7 +113,7 @@ size_t CurlStreambuff::fillbuffer()
     if (m_size > 0) {
       break;
     }
-    /* wait for activity, timeout or "nothing" */ 
+    /* wait for activity, timeout or "nothing" */
     int numfds;
     mc = curl_multi_wait(m_multi_handle, nullptr, 0, 1000, &numfds);
     if(mc != CURLM_OK) {
@@ -120,7 +123,7 @@ size_t CurlStreambuff::fillbuffer()
     /* 'numfds' being zero means either a timeout or no file descriptors to
        wait for. Try timeout on first occurrence, then assume no file
        descriptors and no file descriptors to wait for means wait for 100
-       milliseconds. */ 
+       milliseconds. */
     if(numfds == 0) {
       if (++repeats > 1) {
         std::this_thread::sleep_for(100ms);
