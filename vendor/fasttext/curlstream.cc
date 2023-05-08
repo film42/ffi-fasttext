@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <memory>
 #include <chrono>
 #include <thread>
